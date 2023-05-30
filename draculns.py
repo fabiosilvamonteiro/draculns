@@ -42,16 +42,22 @@ def scan_network(network, interface):
 
     return devices
 
+
 # Função para escanear portas de um IP
 def scan_ports(ip):
     nm = nmap.PortScanner()  # Inicializa o PortScanner
     try:
         nm.scan(ip, arguments='-F -sV')  # Modo rápido, detecção de serviço/versão
-    except KeyError:
+    except (nmap.PortScannerError, KeyError):
         console.print(f"[bold red] [*] A varredura rápida falhou para o {ip}, tentando varredura abrangente.[/bold red]")
-        nm.scan(ip, arguments='-p 1-65535 -sV')  # Varredura completa
+        try:
+            nm.scan(ip, arguments='-p 1-65535 -sV')  # Varredura completa
+        except nmap.PortScannerError:
+            console.print(f"[bold red] [*] A varredura abrangente também falhou para o {ip}.[/bold red]")
+            return None
 
     return nm[ip]
+
 
 # Função para verificar se o fornecedor é provavelmente de um dispositivo móvel
 def is_likely_mobile(vendor):
@@ -60,6 +66,7 @@ def is_likely_mobile(vendor):
 
     vendor_lower = vendor.lower()
     return any(vendor_lower.startswith(mobile_vendor) for mobile_vendor in mobile_vendors)
+
 
 # Função para imprimir informações do dispositivo
 def print_device_info(device):
@@ -76,6 +83,7 @@ def print_device_info(device):
     console.print(f"Provavelmente um dispositivo móvel: {'[bold green]Sim[/bold green]' if likely_mobile else '[bold red]Não[/bold red]'}")
 
     return vendor
+
 
 # Função para imprimir as portas abertas
 def print_open_ports(table, port_scan):
@@ -104,6 +112,7 @@ def print_open_ports(table, port_scan):
     console.print("\nPortas Abertas e Serviços:")
     console.print(table)
 
+
 # Função para escanear rede e portas
 def scan_network_and_ports(network, interface):
     devices = scan_network(network, interface)
@@ -112,17 +121,18 @@ def scan_network_and_ports(network, interface):
 
         try:
             port_scan = scan_ports(device['ip'])
+            if port_scan:
+                table = Table(show_header=True, header_style="bold", box=box.SIMPLE)
+                table.add_column("Protocolo", style="cyan")
+                table.add_column("Porta", style="cyan")
+                table.add_column("Estado", style="cyan")
+                table.add_column("Serviço", style="cyan")
 
-            table = Table(show_header=True, header_style="bold", box=box.SIMPLE)
-            table.add_column("Protocolo", style="cyan")
-            table.add_column("Porta", style="cyan")
-            table.add_column("Estado", style="cyan")
-            table.add_column("Serviço", style="cyan")
-
-            print_open_ports(table, port_scan)
-
-        except Exception as e:
-            console.print(f" [*] Ocorreu um erro ao escanear as portas para {device['ip']}: [bold red]{str(e)}[/bold red]")
+                print_open_ports(table, port_scan)
+            else:
+                console.print(f" [*] Não foi possível obter os resultados das portas para {device['ip']}")
+        except (nmap.PortScannerError, KeyError) as e:
+            console.print(f" [*] Ocorreu um erro ao escanear as portas para {device['ip']}: {str(e)}")
 
 # Função para realizar uma única varredura
 def scan_once(args, periodically=False):
@@ -135,6 +145,7 @@ def scan_once(args, periodically=False):
     if not periodically:
         console.print("[bold green] [*] Varredura completa!")
 
+
 # Função para realizar varredura periodicamente
 def scan_periodically(args):
     def job():
@@ -145,6 +156,7 @@ def scan_periodically(args):
     while True:
         schedule.run_pending()
         time.sleep(1)
+
 
 # Função principal
 def main():
@@ -159,6 +171,7 @@ def main():
         scan_periodically(args)
     else:
         scan_once(args)
+
 
 # Iniciando o script
 if __name__ == "__main__":
