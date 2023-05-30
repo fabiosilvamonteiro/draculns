@@ -132,7 +132,7 @@ def scan_network_and_ports(network, interface):
             else:
                 console.print(f" [*] Não foi possível obter os resultados das portas para {device['ip']}")
         except (nmap.PortScannerError, KeyError) as e:
-            console.print(f" [*] Ocorreu um erro ao escanear as portas para o dispositivo.")
+            console.print(f"[bold red] [*] Ocorreu um erro ao escanear as portas para o dispositivo.[/bold red]")
 
 # Função para realizar uma única varredura
 def scan_once(args, periodically=False):
