@@ -27,6 +27,7 @@ apt-get install python3
 ```
 
 2. Pacotes Python específicos. Estes podem ser instalados através do pip, o gerenciador de pacotes do Python. A lista de pacotes necessários inclui:
+
    * argparse
    * nmap
    * ipaddress
