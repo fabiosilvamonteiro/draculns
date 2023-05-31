@@ -45,6 +45,10 @@ Siga estas etapas para usar o DraculNS:
 
 1. Baixe o script do meu repositório do GitHub ou clone-o em seu ambiente de trabalho local.
 
+```bash
+wget https://raw.githubusercontent.com/fabiosilvamonteiro/draculns/main/draculns.py
+```
+
 2. Altere as permissões do script para torná-lo executável. Você pode fazer isso com o comando `chmod`:
 
 ```bash
