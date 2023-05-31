@@ -2,7 +2,7 @@
 
 ## Descrição
 
-DraculNS é um script Python desenvolvido para realizar varreduras de redes e portas. Ele facilita a identificação de dispositivos e serviços em uma rede.
+O DraculNS é um script em Python desenvolvido por Fábio Monteiro com o objetivo de realizar varreduras TCP, identificar portas e obter informações sobre serviços, incluindo suas versões. Esse script torna mais fácil a identificação de dispositivos e serviços presentes em uma rede.
 
 **Autor:** Fábio Monteiro  
 **GitHub:** [https://github.com/fabiosilvamonteiro/scripts_publicos](https://github.com/fabiosilvamonteiro/scripts_publicos)  
