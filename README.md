@@ -81,4 +81,4 @@ sudo python3 draculns.py -l
 
 Caso encontre problemas ou tenha sugestões de melhorias, sinta-se à vontade para abrir uma issue ou enviar um pull request no [repositório GitHub](https://github.com/fabiosilvamonteiro/scripts_publicos). Sua contribuição é muito bem-vinda! 
 
-Para mais scripts e informações, visite meu perfil no [LinkedIn](https://www.linkedin.com/in/fabio-silva-monteiro/).
+Para mais informações, visite meu perfil no [LinkedIn](https://www.linkedin.com/in/fabio-silva-monteiro/).
