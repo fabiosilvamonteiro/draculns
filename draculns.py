@@ -97,7 +97,14 @@ def scan_ports(ip):
             console.print(f"[bold red] [*] Ocorreu um erro ao varrer as portas para o IP {ip}: Utilize a flag -l para tentar determinar as portas.[/bold red]")
             return nm
 
-    return nm[ip]
+    try:
+        return nm[ip]
+    except KeyError:
+        console.print(f"[bold red] [*] Não foi possível recuperar informações de porta para o IP {ip}[/bold red]")
+        return nm
+    except Exception as e:
+        console.print(f"[bold red] [*] Ocorreu um erro desconhecido ao recuperar informações de porta: {str(e)}[/bold red]")
+        return nm
 
 
 def get_port_color(state):
