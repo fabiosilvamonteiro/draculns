@@ -46,6 +46,12 @@ Para instalar todos esses pacotes, você pode utilizar o seguinte comando:
 pip install argparse nmap ipaddress scapy mac_vendor_lookup rich time schedule
 ```
 
+Caso você tenha alguma dificuldade, tente atualizar o pacote aiohttp
+
+```bash
+sudo pip3 install --upgrade aiohttp
+```
+
 ## Como usar
 
 Siga estas etapas para usar o DraculNS:
