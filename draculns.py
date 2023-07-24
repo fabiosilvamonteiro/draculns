@@ -102,7 +102,6 @@ def async_scan_ports(ip, nm):
             console.print(f"[bold red] [*] Ocorreu um erro ao varrer as portas para o IP {ip}: {str(e)}[/bold red]")
             return nm[ip]
     except Exception as e:
-        console.print(f"[bold red] [*] Ocorreu um erro desconhecido ao recuperar informações de porta: {str(e)}[/bold red]")
         return nm[ip]
 
 
@@ -168,23 +167,29 @@ def print_open_ports(port_scan):
     table.add_column("Serviço", style="cyan")
     table.add_column("Versão", style="cyan")
 
+    def get_important_port_color(port, state):
+        # A cor azul escura é escolhida para as portas 22 e 5555
+        if port in [22, 5555] and state == 'open':
+            return 'blue'
+        else:
+            return get_port_color(state)
+
     for proto in port_scan.all_protocols():
         for port in port_scan[proto].keys():
             state = port_scan[proto][port]['state']
             service = port_scan[proto][port]['name']
             version = port_scan[proto][port]['version']
-            color = get_port_color(state)
+            color = get_important_port_color(port, state)
 
             if color:
                 state = f"[{color}]{state}[/{color}]"
-
-            if port in [22, 5555] and state == 'open':
                 service = f"[{color}]{service}[/{color}]"
 
             table.add_row(proto, str(port), state, service, version)
 
     console.print("\n [*] Portas Abertas e Serviços:")
     console.print(table)
+
 
 def scan_ports_for_device(device):
     nm = nmap.PortScanner()
