@@ -12,9 +12,20 @@ import time
 import schedule
 import netifaces
 from concurrent.futures import ThreadPoolExecutor
+import signal
+import sys
 
 console = Console()
 mac_lookup = MacLookup()
+
+# A função do manipulador para o sinal SIGINT
+def signal_handler(signal, frame):
+    console.print("[bold red]\n[*] Interrompido pelo usuário! Finalizando...[/bold red]")
+    schedule.clear() # limpar todas as tarefas agendadas.
+    sys.exit(0)
+
+# Definindo o manipulador de sinal para SIGINT
+signal.signal(signal.SIGINT, signal_handler)
 
 
 def display_banner():
@@ -106,17 +117,29 @@ def get_port_color(state):
 
 def is_likely_mobile(vendor):
     mobile_vendors = [
-        'Apple', 'Samsung', 'Huawei', 'LG', 'Sony', 'HTC', 'Motorola', 'Nokia', 'ZTE', 'Xiaomi',
-        'OnePlus', 'Realme', 'Google', 'Oppo', 'Vivo', 'Lenovo', 'Asus', 'BlackBerry', 'Meizu',
-        'Honor', 'Smartisan', 'Tecno', 'Infinix', 'Alcatel', 'Panasonic', 'Sharp', 'TCL', 'Philips',
-        'Lava', 'BLU', 'Itel', 'Gionee', 'Vodafone', 'Xolo', 'LeEco', 'Xiaolajiao', 'Evercoss', 'Advan',
-        'Nubia', 'Umidigi', 'Elephone', 'Zopo', 'Doogee', 'Cubot', 'Symphony', 'Walton', 'Maxwest', 'Okapia',
-        'Jolla', 'Blackview', 'ZTE', 'Itel', 'Greentel', 'Wing', 'Posh', 'Infone', 'Sendo', 'Trio', 'Verykool',
-        'Plum', 'Vodafone', 'Celkon', 'BLU', 'OnePlus', 'Siemens', 'Motorola', 'SonyEricsson', 'BenQ', 'Palm',
-        'Vertu', 'Emobile', 'Sewoo', 'Cellect', 'Semo', 'Heitech', 'Opera', 'Neken', 'Inno', 'INQ', 'TCG',
-        'Xtouch', 'Neffos', 'Texet', 'Wexler', 'SKK', 'Energizer', 'ZUK', 'Highscreen', 'Texet', 'Lephone',
-        'TP-Link', 'Greentel', 'Energizer', 'M-Horse', 'Polariod', 'Voto', 'Meitu', 'Vernee', 'ARK', 'Aquaris',
-        'Pioneer', 'NEC', 'Dell', 'Philips', 'PCS Systemtechnik GmbH'
+    'Apple', 'Samsung', 'Huawei', 'LG', 'Sony', 'HTC', 'Motorola', 'Nokia', 'ZTE', 'Xiaomi',
+    'OnePlus', 'Realme', 'Google', 'Oppo', 'Vivo', 'Lenovo', 'Asus', 'BlackBerry', 'Meizu',
+    'Honor', 'Smartisan', 'Tecno', 'Infinix', 'Alcatel', 'Panasonic', 'Sharp', 'TCL', 'Philips',
+    'Lava', 'BLU', 'Itel', 'Gionee', 'Vodafone', 'Xolo', 'LeEco', 'Xiaolajiao', 'Evercoss', 'Advan',
+    'Nubia', 'Umidigi', 'Elephone', 'Zopo', 'Doogee', 'Cubot', 'Symphony', 'Walton', 'Maxwest', 'Okapia',
+    'Jolla', 'Blackview', 'Greentel', 'Wing', 'Posh', 'Infone', 'Sendo', 'Trio', 'Verykool',
+    'Plum', 'Celkon', 'Siemens', 'SonyEricsson', 'BenQ', 'Palm',
+    'Vertu', 'Emobile', 'Sewoo', 'Cellect', 'Semo', 'Heitech', 'Opera', 'Neken', 'Inno', 'INQ', 'TCG',
+    'Xtouch', 'Neffos', 'Texet', 'Wexler', 'SKK', 'Energizer', 'ZUK', 'Highscreen', 'Texet', 'Lephone',
+    'TP-Link', 'M-Horse', 'Polariod', 'Voto', 'Meitu', 'Vernee', 'ARK', 'Aquaris',
+    'Pioneer', 'NEC', 'Dell', 'PCS Systemtechnik GmbH',
+    'Acer', 'Amazon', 'Archos', 'BQ', 'Cat', 'Coolpad', 'Gigabyte', 'Haier', 'Hisense', 'Karbonn',
+    'Kyocera', 'Lanix', 'Micromax', 'Microsoft', 'Prestigio', 'QMobile', 'Razer', 'RCA', 'RIM', 'Spice',
+    'T-Mobile', 'Toshiba', 'ViewSonic', 'Wiko', 'YU', 'Barnes & Noble', 'BYD',
+    'Coolpad', 'Casio', 'Cherry Mobile', 'Fujitsu', 'General Mobile', 'Geotel', 'Google', 'HP',
+    'Hyundai', 'iBall', 'iBerry', 'Intex', 'K-Touch', 'Kogan', 'Lava', 'Lemon Mobiles',
+    'Micromax', 'Microsoft', 'Mobiistar', 'MyPhone', 'NIU', 'Nubia', 'O+', 'Rivo Mobile', 'Salora',
+    'Sonim', 'Tecno Mobile', 'Unnecto', 'Videocon', 'WickedLeak', 'Wiko Mobile', 'XOLO', 'Yota Devices',
+    'Yu', 'Ziox', 'Zync', 'Black Shark', 'Nokia Mobile', 'Razer', 'vivo', 'IQOO', 'Barnes & Noble',
+    'Bang & Olufsen', 'Bose', 'Bowers & Wilkins', 'BRAVEN', 'Jabra', 'Jaybird', 'JBL', 'Marshall', 'Sennheiser',
+    'Skullcandy', 'Sonos', 'Beats by Dre', 'Ultimate Ears', 'V-Moda', 'Plantronics', 'SteelSeries', 'Audio-Technica',
+    'RHA', 'Anker', '1MORE', 'JLab', 'AKG', 'Harman Kardon', 'FiiO', 'COWIN', 'Pioneer', 'AudioQuest', 'Hifiman',
+    'Cambridge Audio', 'Shure', 'Sony', 'Beyerdynamic', 'Denon'
     ]
     return any(vendor.lower().startswith(mobile_vendor.lower()) for mobile_vendor in mobile_vendors)
 
@@ -162,23 +185,6 @@ def print_open_ports(port_scan):
 
     console.print("\n [*] Portas Abertas e Serviços:")
     console.print(table)
-
-
-def async_scan_ports(ip, nm):
-    try:
-        nm.scan(ip, arguments='--min-parallelism 10 --max-parallelism 50 --min-hostgroup 10 --max-hostgroup 50 -F -sV -n -Pn -T5')
-        return nm[ip]
-    except KeyError:
-        console.print(f"[bold red] [*] A varredura rápida falhou para {ip}, tentando varredura completa.[/bold red]")
-        try:
-            nm.scan(ip, arguments='--min-parallelism 10 --max-parallelism 50 --min-hostgroup 10 --max-hostgroup 50 -p- -sV -n -Pn -T5 --script=firewall-bypass')
-            return nm[ip]
-        except Exception as e:
-            console.print(f"[bold red] [*] Ocorreu um erro ao varrer as portas para o IP {ip}: {str(e)}[/bold red]")
-            return nm[ip]
-    except Exception as e:
-        console.print(f"[bold red] [*] Ocorreu um erro desconhecido ao recuperar informações de porta: {str(e)}[/bold red]")
-        return nm[ip]
 
 def scan_ports_for_device(device):
     nm = nmap.PortScanner()
