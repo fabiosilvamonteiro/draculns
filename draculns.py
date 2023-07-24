@@ -2,7 +2,6 @@
 
 import argparse
 import nmap
-import ipaddress
 from scapy.all import ARP, Ether, srp
 from ipaddress import ip_network
 from mac_vendor_lookup import MacLookup, VendorNotFoundError
@@ -11,6 +10,8 @@ from rich.table import Table
 from rich import box
 import time
 import schedule
+import netifaces
+from concurrent.futures import ThreadPoolExecutor
 
 console = Console()
 mac_lookup = MacLookup()
@@ -21,29 +22,24 @@ def display_banner():
     Exibe um banner informativo no início da execução do script.
     """
     console.print(
-        """
+"""
 [bold red]=================================================================[/bold red]
 [bold red] [*] ATENÇÃO: Este script é apenas para fins educacionais.[/bold red]
 [bold red] [*] Não o use para atividades ilegais.[/bold red]
 [bold red] [*] Não me responsabilizo por qualquer uso indevido deste script.[/bold red]
-[bold red]=================================================================[/bold red]
+[bold red]=================================================================[/bold red]""")
+
+    console.print(        
 """
-    )
-    console.print(
-        """
 [bold blue] [*] Autor: Fábio Monteiro[/bold blue]
 [bold cyan] [*] GitHub: https://github.com/fabiosilvamonteiro/scripts_publicos[/bold cyan]
 [bold cyan] [*] LinkedIn: https://www.linkedin.com/in/fabio-silva-monteiro/[/bold cyan]
-"""
-    )
-
+""")
 
 def validate_interface(interface):
     """
     Valida se a interface de rede especificada existe.
     """
-    import netifaces
-
     if interface not in netifaces.interfaces():
         console.print(f"[bold red] [*] A interface de rede '{interface}' não existe. Verifique o nome da interface e tente novamente.[/bold red]")
         return False
@@ -75,36 +71,28 @@ def scan_network(network, interface):
 
     try:
         result = srp(packet, timeout=1, verbose=0, iface=interface)[0]
-
         devices = [{'ip': received.psrc, 'mac': received.hwsrc} for sent, received in result]
-
         return devices
-
     except Exception as e:
         console.print(f"[bold red] [*] Ocorreu um erro ao varrer a rede: {str(e)}[/bold red]")
         return []
 
 
-def scan_ports(ip):
-    nm = nmap.PortScanner()
+def async_scan_ports(ip, nm):
     try:
         nm.scan(ip, arguments='--min-parallelism 10 --max-parallelism 50 --min-hostgroup 10 --max-hostgroup 50 -F -sV -n -Pn -T5')
+        return nm[ip]
     except KeyError:
         console.print(f"[bold red] [*] A varredura rápida falhou para {ip}, tentando varredura completa.[/bold red]")
         try:
             nm.scan(ip, arguments='--min-parallelism 10 --max-parallelism 50 --min-hostgroup 10 --max-hostgroup 50 -p- -sV -n -Pn -T5 --script=firewall-bypass')
+            return nm[ip]
         except Exception as e:
-            console.print(f"[bold red] [*] Ocorreu um erro ao varrer as portas para o IP {ip}: Utilize a flag -l para tentar determinar as portas.[/bold red]")
-            return nm
-
-    try:
-        return nm[ip]
-    except KeyError:
-        console.print(f"[bold red] [*] Não foi possível recuperar informações de porta para o IP {ip}[/bold red]")
-        return nm
+            console.print(f"[bold red] [*] Ocorreu um erro ao varrer as portas para o IP {ip}: {str(e)}[/bold red]")
+            return nm[ip]
     except Exception as e:
         console.print(f"[bold red] [*] Ocorreu um erro desconhecido ao recuperar informações de porta: {str(e)}[/bold red]")
-        return nm
+        return nm[ip]
 
 
 def get_port_color(state):
@@ -128,7 +116,7 @@ def is_likely_mobile(vendor):
         'Vertu', 'Emobile', 'Sewoo', 'Cellect', 'Semo', 'Heitech', 'Opera', 'Neken', 'Inno', 'INQ', 'TCG',
         'Xtouch', 'Neffos', 'Texet', 'Wexler', 'SKK', 'Energizer', 'ZUK', 'Highscreen', 'Texet', 'Lephone',
         'TP-Link', 'Greentel', 'Energizer', 'M-Horse', 'Polariod', 'Voto', 'Meitu', 'Vernee', 'ARK', 'Aquaris',
-        'Pioneer', 'NEC', 'Dell', 'Philips'
+        'Pioneer', 'NEC', 'Dell', 'Philips', 'PCS Systemtechnik GmbH'
     ]
     return any(vendor.lower().startswith(mobile_vendor.lower()) for mobile_vendor in mobile_vendors)
 
@@ -141,7 +129,7 @@ def print_device_info(device):
 
     likely_mobile = is_likely_mobile(vendor)
 
-    console.print(f"\n [*] Dispositivo: [bold blue]{device['ip']}[/bold blue]")
+    console.print(f" [*] Dispositivo: [bold blue]{device['ip']}[/bold blue]")
     console.print(f" [*] MAC: [bold green]{device['mac']}[/bold green]")
     console.print(f" [*] Fabricante: [bold yellow]{vendor}[/bold yellow]")
     console.print(f" [*] Provavelmente um dispositivo móvel: {'[bold green]Sim[/bold green]' if likely_mobile else '[bold red]Não[/bold red]'}")
@@ -176,12 +164,29 @@ def print_open_ports(port_scan):
     console.print(table)
 
 
-def scan_ports_for_device(device):
+def async_scan_ports(ip, nm):
     try:
-        port_scan = scan_ports(device['ip'])
-        print_open_ports(port_scan)
+        nm.scan(ip, arguments='--min-parallelism 10 --max-parallelism 50 --min-hostgroup 10 --max-hostgroup 50 -F -sV -n -Pn -T5')
+        return nm[ip]
+    except KeyError:
+        console.print(f"[bold red] [*] A varredura rápida falhou para {ip}, tentando varredura completa.[/bold red]")
+        try:
+            nm.scan(ip, arguments='--min-parallelism 10 --max-parallelism 50 --min-hostgroup 10 --max-hostgroup 50 -p- -sV -n -Pn -T5 --script=firewall-bypass')
+            return nm[ip]
+        except Exception as e:
+            console.print(f"[bold red] [*] Ocorreu um erro ao varrer as portas para o IP {ip}: {str(e)}[/bold red]")
+            return nm[ip]
     except Exception as e:
-        console.print(f"[bold red] [*] Ocorreu um erro ao varrer as portas para o IP {device['ip']}: Utilize o script com a flag -l para tentar determinar as portas.[/bold red]")
+        console.print(f"[bold red] [*] Ocorreu um erro desconhecido ao recuperar informações de porta: {str(e)}[/bold red]")
+        return nm[ip]
+
+def scan_ports_for_device(device):
+    nm = nmap.PortScanner()
+    with ThreadPoolExecutor() as executor:
+        port_scan = executor.submit(async_scan_ports, device['ip'], nm)
+        if port_scan.result():
+            print_open_ports(port_scan.result())
+
 
 
 def scan_network_and_ports(network, interface):
