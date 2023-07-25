@@ -4,9 +4,9 @@
 
 ## Descrição
 
-O DraculNS é um script em Python3 desenvolvido por [mim](https://github.com/fabiosilvamonteiro) para realizar varreduras de portas em uma rede. Ele foi projetado para facilitar a identificação de dispositivos e serviços presentes na rede.
+O DraculNS é um script em Python3 desenvolvido por [mim](https://github.com/fabiosilvamonteiro) que utiliza técnicas de varredura TCP com o nmap para identificar portas abertas nos dispositivos da rede. Além disso, a ferramenta é capaz de obter informações sobre os serviços encontrados nas portas, incluindo suas versões. Essas informações são úteis para entender melhor a configuração e o estado dos dispositivos na rede.
 
-Este script utiliza técnicas de varredura TCP para identificar portas abertas nos dispositivos da rede. Além disso, o DraculNS também é capaz de obter informações sobre os serviços encontrados nas portas, incluindo suas versões. Essas informações podem ser úteis para entender melhor a configuração e o estado dos dispositivos na rede.
+A principal vantagem do DraculNS é a capacidade de tentar identificar se o dispositivo encontrado pode ser um aparelho móvel, como celular ou tablet. A ferramenta possui uma lista de fabricantes de dispositivos móveis conhecidos e, com base no fornecedor do endereço MAC, tenta determinar se o dispositivo é um aparelho móvel. Além disso, o DraculNS também destaca as principais portas relacionadas a processos de exploração. Por exemplo, a porta 22 é comumente associada a dispositivos iOS, enquanto a porta 5555 está frequentemente aberta em dispositivos Android que têm o modo de desenvolvedor ativado.
 
 ## Requisitos
 
