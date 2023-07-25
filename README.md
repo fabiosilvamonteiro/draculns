@@ -1,3 +1,13 @@
+# DraculNS
+
+![Descrição da imagem](exemplo.png)
+
+## Descrição
+
+O DraculNS é um script em Python3 desenvolvido por [Seu Nome](https://github.com/fabiosilvamonteiro) para realizar varreduras de portas em uma rede. Ele foi projetado para facilitar a identificação de dispositivos e serviços presentes na rede.
+
+Este script utiliza técnicas de varredura TCP para identificar portas abertas nos dispositivos da rede. Além disso, o DraculNS também é capaz de obter informações sobre os serviços encontrados nas portas, incluindo suas versões. Essas informações podem ser úteis para entender melhor a configuração e o estado dos dispositivos na rede.
+
 ## Requisitos
 
 Para executar o DraculNS, você precisará:
