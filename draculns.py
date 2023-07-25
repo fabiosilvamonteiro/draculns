@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 console = Console()
 
-# Coloque a lista de fabricantes de dispositivos móveis (se necessário)
 MOBILE_DEVICE_MANUFACTURERS = set([
     'Apple', 'Samsung', 'Huawei', 'LG', 'Sony', 'HTC', 'Motorola', 'Nokia', 'ZTE', 'Xiaomi',
     'OnePlus', 'Realme', 'Google', 'Oppo', 'Vivo', 'Lenovo', 'Asus', 'BlackBerry', 'Meizu',
