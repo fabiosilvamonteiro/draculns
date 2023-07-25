@@ -1,4 +1,4 @@
-# DraculNS
+## DraculNS
 
 ![Descrição da imagem](exemplo.png)
 
@@ -88,10 +88,10 @@ sudo python3 draculns.py -l
 
 ## Contribuições
 
-Ajude comprando nosso aplicativo de Google Hacking que disponibiliza dorks específicas para pentesting, mais informaçãoes em:
+Ajude comprando nosso aplicativo de Google Hacking que disponibiliza dorks específicas para pentesting, mais informações em:
 
 https://play.google.com/store/apps/details?id=com.gdraculdorksmobile&pli=1
 
-Caso encontre problemas ou tenha sugestões de melhorias, sinta-se à vontade para abrir uma issue ou enviar um pull request no [repositório GitHub](https://github.com/fabiosilvamonteiro/scripts_publicos). Sua contribuição é muito bem-vinda! 
+Caso encontre problemas ou tenha sugestões de melhorias, sinta-se à vontade para abrir uma issue ou enviar um pull request no [repositório GitHub](https://github.com/fabiosilvamonteiro/). Sua contribuição é muito bem-vinda! 
 
 Para mais informações, visite meu perfil no [LinkedIn](https://www.linkedin.com/in/fabio-silva-monteiro/).
