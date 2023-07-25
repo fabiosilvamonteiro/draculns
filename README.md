@@ -4,7 +4,7 @@
 
 ## Descrição
 
-O DraculNS é um script em Python3 desenvolvido por [Seu Nome](https://github.com/fabiosilvamonteiro) para realizar varreduras de portas em uma rede. Ele foi projetado para facilitar a identificação de dispositivos e serviços presentes na rede.
+O DraculNS é um script em Python3 desenvolvido por [mim](https://github.com/fabiosilvamonteiro) para realizar varreduras de portas em uma rede. Ele foi projetado para facilitar a identificação de dispositivos e serviços presentes na rede.
 
 Este script utiliza técnicas de varredura TCP para identificar portas abertas nos dispositivos da rede. Além disso, o DraculNS também é capaz de obter informações sobre os serviços encontrados nas portas, incluindo suas versões. Essas informações podem ser úteis para entender melhor a configuração e o estado dos dispositivos na rede.
 
@@ -49,13 +49,13 @@ Siga estas etapas para usar o DraculNS:
 1. Baixe o script do meu repositório do GitHub ou clone-o em seu ambiente de trabalho local.
 
 ```bash
-wget https://raw.githubusercontent.com/seu_usuario/seu_repositorio/main/seu_script.py
+wget https://raw.githubusercontent.com/fabiosilvamonteiro/draculns/main/draculns.py
 ```
 
 2. Altere as permissões do script para torná-lo executável. Você pode fazer isso com o comando `chmod`:
 
 ```bash
-chmod +x seu_script.py
+chmod +x draculns.py
 ```
 
 3. Execute o script com privilégios de superusuário. Isso é necessário porque a varredura de rede precisa desses privilégios. Use o comando `sudo`:
