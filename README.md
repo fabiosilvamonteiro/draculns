@@ -29,7 +29,7 @@ sudo apt-get install python3
 Para instalar todos esses pacotes, você pode utilizar o seguinte comando:
 
 ```bash
-sudo pip install scapy python-nmap mac-vendor-lookup rich netifaces
+sudo pip install scapy python-nmap mac-vendor-lookup rich netifaces --break-system-packages
 ```
 
 ## Como usar
