@@ -353,7 +353,7 @@ def scan_periodically(args, networks):
         live = None
 
 def example_usage():
-    return "python3 draculns.py -i eth0 -ip 192.168.0.0/24 -l"
+    return "python3 draculns -i eth0 -ip 192.168.0.0/24 -l"
 
 def main():
     parser = argparse.ArgumentParser(description='Varredura de Rede', epilog=f'Exemplo de uso:\n  {example_usage()}')
