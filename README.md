@@ -15,7 +15,7 @@ Para executar o DraculNS, você precisará:
 1. Python 3 instalado em seu sistema.
 
 ```bash
-apt-get install python3
+sudo apt-get install python3
 ```
 
 2. Pacotes Python específicos. Estes podem ser instalados através do pip, o gerenciador de pacotes do Python. A lista de pacotes necessários inclui:
@@ -29,7 +29,7 @@ apt-get install python3
 Para instalar todos esses pacotes, você pode utilizar o seguinte comando:
 
 ```bash
-pip install scapy python-nmap mac-vendor-lookup rich netifaces
+sudo pip install scapy python-nmap mac-vendor-lookup rich netifaces
 ```
 
 ## Como usar
@@ -45,7 +45,7 @@ wget https://raw.githubusercontent.com/fabiosilvamonteiro/draculns/main/draculns
 2. Altere as permissões do script para torná-lo executável. Você pode fazer isso com o comando `chmod`:
 
 ```bash
-chmod +x draculns.py
+sudo chmod +x draculns.py
 ```
 
 3. Execute o script com privilégios de superusuário. Isso é necessário porque a varredura de rede precisa desses privilégios. Use o comando `sudo`:
