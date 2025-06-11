@@ -20,26 +20,16 @@ apt-get install python3
 
 2. Pacotes Python específicos. Estes podem ser instalados através do pip, o gerenciador de pacotes do Python. A lista de pacotes necessários inclui:
 
-   * argparse
-   * nmap
-   * ipaddress
-   * time
-   * schedule
-   * scapy
-   * mac_vendor_lookup
-   * rich
-
+* scapy
+* python-nmap
+* mac-vendor-lookup
+* rich
+* netifaces
 
 Para instalar todos esses pacotes, você pode utilizar o seguinte comando:
 
 ```bash
-pip install argparse nmap ipaddress scapy mac_vendor_lookup rich time schedule
-```
-
-Caso você tenha alguma dificuldade, tente atualizar o pacote aiohttp
-
-```bash
-sudo pip3 install --upgrade aiohttp
+pip install scapy python-nmap mac-vendor-lookup rich netifaces
 ```
 
 ## Como usar
@@ -75,12 +65,6 @@ Se quiser que a varredura seja realizada periodicamente (a cada 1 minuto), adici
 ```bash
 sudo python3 draculns.py -l
 ```
-
-## Contribuições
-
-Ajude comprando nosso aplicativo de Google Hacking que disponibiliza dorks específicas para pentesting, mais informações em:
-
-[Google Dorks Mobile - DraculDorks](https://play.google.com/store/apps/details?id=com.gdraculdorksmobile&pli=1)
 
 ## Aviso Legal
 
