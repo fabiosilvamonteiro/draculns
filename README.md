@@ -39,31 +39,31 @@ Siga estas etapas para usar o DraculNS:
 1. Baixe o script do meu repositório do GitHub ou clone-o em seu ambiente de trabalho local.
 
 ```bash
-wget [https://raw.githubusercontent.com/fabiosilvamonteiro/draculns/main/draculns.py](https://github.com/fabiosilvamonteiro/draculns.git)
+wget https://github.com/fabiosilvamonteiro/draculns.git)](https://github.com/fabiosilvamonteiro/draculns.git
 ```
 
 2. Altere as permissões do script para torná-lo executável. Você pode fazer isso com o comando `chmod`:
 
 ```bash
-sudo chmod +x draculns.py
+sudo chmod +x install.sh
 ```
 
 3. Execute o script com privilégios de superusuário. Isso é necessário porque a varredura de rede precisa desses privilégios. Use o comando `sudo`:
 
 ```bash
-sudo python3 draculns.py
+sudo bash install.sh
 ```
 
 Por padrão, o DraculNS realiza a varredura na rede '192.168.0.0/24' através da interface 'eth0'. Se você quiser especificar uma rede ou interface diferentes, pode usar as opções '-ip' e '-i':
 
 ```bash
-sudo python3 draculns.py -ip 10.0.2.0/24 -i wlan0
+sudo draculns -ip 10.0.2.0/24 -i wlan0
 ```
 
 Se quiser que a varredura seja realizada periodicamente (a cada 30 segundos), adicione a opção '-l':
 
 ```bash
-sudo python3 draculns.py -l
+sudo draculns -l
 ```
 
 ## Aviso Legal
