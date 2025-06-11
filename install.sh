@@ -5,7 +5,7 @@ set -e
 DRACULNS_DIR="/usr/share/draculns"
 BIN_PATH="/usr/local/bin/draculns"
 
-echo "[*] Instalando DraculNS..."
+echo " [*] Instalando DraculNS..."
 
 # Verifica se está rodando como root
 if [ "$EUID" -ne 0 ]; then
