@@ -60,7 +60,7 @@ Por padrão, o DraculNS realiza a varredura na rede '192.168.0.0/24' através da
 sudo python3 draculns.py -ip 10.0.2.0/24 -i wlan0
 ```
 
-Se quiser que a varredura seja realizada periodicamente (a cada 1 minuto), adicione a opção '-l':
+Se quiser que a varredura seja realizada periodicamente (a cada 30 segundos), adicione a opção '-l':
 
 ```bash
 sudo python3 draculns.py -l
