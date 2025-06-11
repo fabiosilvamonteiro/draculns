@@ -37,7 +37,7 @@ def sanitize_vendor_name(name):
     name = re.sub(r'[\s\.,\-_\(\)\[\]/\\:;]+', '', name)
     return name.strip()
 
-def load_mobile_vendors(json_path="mac_vendors.json"):
+def load_mobile_vendors(json_path="/usr/share/draculns/mac_vendors.json"):
     if not os.path.exists(json_path):
         console.print(f"[bold red]Arquivo {json_path} não encontrado![/bold red]")
         return set()
