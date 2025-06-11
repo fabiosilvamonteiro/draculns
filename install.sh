@@ -9,7 +9,7 @@ echo "[*] Instalando DraculNS..."
 
 # Verifica se está rodando como root
 if [ "$EUID" -ne 0 ]; then
-  echo "Por favor execute como root (sudo)."
+  echo " [*] Por favor execute como root (sudo)."
   exit 1
 fi
 
@@ -27,8 +27,8 @@ chmod +x "$DRACULNS_DIR/draculns.py"
 cat > "$BIN_PATH" << EOF
 #!/bin/bash
 if [ "\$EUID" -ne 0 ]; then
-  echo "[!] Este script precisa ser executado com sudo ou como root."
-  echo "Tente: sudo draculns \$@"
+  echo " [!] Este script precisa ser executado com sudo ou como root."
+  echo " [*] Tente: sudo draculns \$@"
   exit 1
 fi
 python3 $DRACULNS_DIR/draculns.py "\$@"
@@ -37,5 +37,5 @@ EOF
 # Dá permissão executável para o wrapper
 chmod +x "$BIN_PATH"
 
-echo "[*] Instalação concluída!"
-echo "Você pode executar o DraculNS digitando: draculns"
+echo " [*] Instalação concluída!"
+echo " [*] Você pode executar o DraculNS digitando: sudo draculns"
