@@ -69,5 +69,3 @@ sudo python3 draculns.py -l
 ## Aviso Legal
 
 Este script foi criado para fins educacionais e de teste. Qualquer uso indevido deste script, incluindo atividades ilegais, é estritamente proibido. Não me responsabilizo por qualquer uso indevido deste script. Utilize-o de maneira ética e responsável.
-
-```
