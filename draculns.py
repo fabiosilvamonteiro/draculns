@@ -18,6 +18,7 @@ import signal
 import sys
 import re
 import unicodedata
+import concurrent.futures
 
 os.system('clear')
 
@@ -108,21 +109,62 @@ def async_scan_network(network):
         console.print(f"[bold red] [*] Ocorreu um erro ao varrer a rede: {str(e)}[/bold red]")
         return []
 
+def scan_and_print_once(networks):
+    devices = []
+    for network in networks:
+        devices += async_scan_network(network)
+
+    devices = sorted(devices, key=lambda d: tuple(int(o) for o in d['ip'].split('.')))
+
+    plural = "s" if len(devices) > 1 else ""
+    if devices:
+        console.print(f"[bold yellow] [*] Dispositivo{plural} Encontrado{plural}:[/bold yellow]\n")
+        table = Table(show_header=False, box=box.SQUARE)
+        for device in devices:
+            table.add_row(f"[bold cyan]{device['ip']}[/bold cyan] (MAC: [bold green]{device['mac']}[/bold green])")
+        console.print(table)
+
+        console.print(f"\n[bold yellow] [*] Analisando Dispositivo{plural}:[/bold yellow]\n")
+        for device in devices:
+            vendor = print_device_info(device)
+            port_scan = scan_ports_for_device(device)
+            if port_scan:
+                print_open_ports(port_scan)
+    else:
+        console.print(f"\n[bold red] [*] Nenhum dispositivo encontrado![/bold red]\n")
+    return devices
+
 def scan_ports_for_device(device):
+    """
+    Tenta escanear rapidamente portas comuns. Se não encontrar nada ou host não responder,
+    tenta varredura completa. Sempre retorna dados formatados e fáceis de usar.
+    """
     nm = nmap.PortScanner()
     ip = device['ip']
+    FAST_ARGS = f'--min-parallelism 5 -sV -n -Pn -T5'
+    FULL_ARGS = '--min-parallelism 5 -p- -sV -n -Pn -T4 --script=firewall-bypass --host-timeout 30s'
 
     try:
-        nm.scan(ip, arguments='--min-parallelism 5 -sV -n -Pn -T5')
-
+        nm.scan(ip, arguments=FAST_ARGS)
         if ip in nm.all_hosts():
             host_data = nm[ip]
-            if 'hostscript' in host_data:
-                del host_data['hostscript']
-            return host_data
+            # Checa se achou alguma porta aberta
+            portas_abertas = any(
+                host_data.has_tcp(port) and host_data['tcp'][port]['state'] == 'open'
+                for port in host_data['tcp']
+            ) if 'tcp' in host_data else False
 
-        console.print(f"[bold yellow] [*] A varredura rápida falhou para {ip}, tentando varredura completa.[/bold yellow]")
-        nm.scan(ip, arguments='--min-parallelism 5 -p- -sV -n -Pn -T5 --script=firewall-bypass')
+            if portas_abertas:
+                if 'hostscript' in host_data:
+                    del host_data['hostscript']
+                return host_data
+            #else:
+                #console.print(f"\n[bold yellow] [*] Nenhuma porta comum aberta em {ip}, tentando varredura completa...[/bold yellow]")
+        #else:
+            #console.print(f"\n[bold yellow] [*] Host {ip} não respondeu ao scan rápido. Tentando varredura completa...[/bold yellow]")
+
+        # Scan completo só se necessário
+        nm.scan(ip, arguments=FULL_ARGS)
         if ip in nm.all_hosts():
             host_data = nm[ip]
             if 'hostscript' in host_data:
@@ -133,6 +175,7 @@ def scan_ports_for_device(device):
 
     except Exception as e:
         return {'error': f"Ocorreu um erro ao varrer as portas para o IP {ip}: {str(e)}"}
+
 
 def get_port_color(state):
     colors = {'open': 'green'}
@@ -197,160 +240,183 @@ def print_device_info(device, port_scan=None):
     return vendor
 
 def print_open_ports(port_scan):
+    """
+    Recebe o objeto PortScanner (nmap.PortScanner) OU um dict com chave 'error'.
+    - Se houver erro: exibe e retorna.
+    - Caso contrário: mostra somente as portas abertas num quadro bonito.
+    """
+    # Caso a função anterior tenha retornado um dicionário de erro
+    if isinstance(port_scan, dict):
+        err = port_scan.get("error")
+        if err:
+            console.print(f"\n[bold red] [*] {err}[/bold red]\n")
+        return
+
     table = Table(show_header=True, header_style="bold", box=box.SIMPLE)
-    table.add_column("Protocolo", style="cyan")
-    table.add_column("Porta", style="cyan")
-    table.add_column("Estado", style="cyan")
-    table.add_column("Serviço", style="cyan")
-    table.add_column("Produto", style="cyan")
-    table.add_column("Versão", style="cyan")
-    table.add_column("CPE", style="cyan")
+    table.add_column("Protocolo",  style="cyan")
+    table.add_column("Porta",      style="cyan")
+    table.add_column("Estado",     style="cyan")
+    table.add_column("Serviço",    style="cyan")
+    table.add_column("Produto",    style="cyan")
+    table.add_column("Versão",     style="cyan")
+    table.add_column("CPE",        style="cyan")
     table.add_column("Extra Info", style="cyan")
 
     for proto in port_scan.all_protocols():
-        for port in port_scan[proto].keys():
-            state = port_scan[proto][port]['state']
-            if state == 'open':
-                service = port_scan[proto][port]['name']
-                product = port_scan[proto][port]['product']
-                version = port_scan[proto][port]['version']
-                cpe = port_scan[proto][port]['cpe']
-                extrainfo = port_scan[proto][port]['extrainfo']
-                color = get_important_port_color(port, state)
+        for port in port_scan[proto]:
+            info = port_scan[proto][port]
+            if info["state"] != "open":
+                continue
 
-                if color:
-                    state = f"[{color}]{state}[/{color}]"
-                    service = f"[{color}]{service}[/{color}]"
-                    product = f"[{color}]{product}[/{color}]"
-                    version = f"[{color}]{version}[/{color}]"
-                    cpe = f"[{color}]{cpe}[/{color}]"
-                    extrainfo = f"[{color}]{extrainfo}[/{color}]"
+            color = get_important_port_color(port, info["state"])
+            row = [
+                proto,
+                str(port),
+                info["state"],
+                info["name"],
+                info["product"],
+                info["version"],
+                info["cpe"],
+                info["extrainfo"],
+            ]
 
-                table.add_row(proto, str(port), state, service, product, version, cpe, extrainfo)
+            # destaca portas 22 e 5555, se abertas
+            if color:
+                row = [f"[{color}]{cell}[/{color}]" if cell else "-" for cell in row]
 
-    if not table.rows:
+            table.add_row(*row)
+
+    if table.rows:
+        console.print(table)
+    else:
         console.print("\n[bold red] [*] Nenhuma porta aberta encontrada![/bold red]\n")
-    else:
-        console.print(table)
 
-def scan_and_print_once(networks):
-    devices = []
-    for network in networks:
-        devices += async_scan_network(network)
-
-    # Ordena os dispositivos por IP numericamente
-    devices = sorted(devices, key=lambda d: tuple(int(o) for o in d['ip'].split('.')))
-    
-    if devices:
-        plural = "s" if len(devices) > 1 else ""
-        console.print(f"[bold yellow] [*] Dispositivo{plural} Encontrado{plural}:[/bold yellow]\n")
-        table = Table(show_header=False, box=box.SQUARE)
-        for device in devices:
-            table.add_row(f"[bold cyan]{device['ip']}[/bold cyan] (MAC: [bold green]{device['mac']}[/bold green])")
-        console.print(table)
-        console.print(f"\n[bold yellow] [*] Analisando Dispositivo{plural}:[/bold yellow]\n")
-        for device in devices:
-            vendor = print_device_info(device)
-            port_scan = scan_ports_for_device(device)
-            if port_scan:
-                print_open_ports(port_scan)
-    else:
-        console.print(f"\n[bold red] [*] Nenhum dispositivo encontrado![/bold red]\n")
-    return devices
-
-def scan_periodically(args, networks):
+def scan_periodically(networks, refresh=10):
+    """
+    No primeiro ciclo faz scan de portas dos dispositivos.
+    Nos seguintes, só verifica se ainda estão presentes.
+    Se achar dispositivo novo, faz scan de portas só dele.
+    """
     global live
     signal.signal(signal.SIGINT, signal_handler)
-    live = Live(console=console, refresh_per_second=0.5)
-    live.start()
-    try:
+    prev_ips = set()
+    device_info = {}   # ip: {'device': {...}, 'ports': {... ou None}}
+    with Live(console=console, refresh_per_second=4) as live:
         while True:
-            devices = []
-            for network in networks:
-                devices += async_scan_network(network)
+            # Scan ARP
+            current_devices = [d for net in networks for d in async_scan_network(net)]
+            current_ips = set(d['ip'] for d in current_devices)
+            new_ips = current_ips - prev_ips
 
-            # Ordenar lista de dispositivos por IP numericamente
-            devices = sorted(devices, key=lambda d: tuple(int(o) for o in d['ip'].split('.')))
-            
-            plural = "s" if len(devices) > 1 else ""
-            if devices:
-                table_summary = Table(show_header=True, header_style="bold yellow", box=box.SIMPLE)
-                table_summary.add_column("IP", style="cyan")
-                table_summary.add_column("MAC", style="green")
-                table_summary.add_column("Fabricante", style="yellow")
-                table_summary.add_column("Dispositivo móvel", style="magenta")
-                table_summary.add_column("Portas abertas", style="cyan")
-                table_summary.add_column("Versão", style="cyan")
-                table_summary.add_column("CPE", style="cyan")
-                table_summary.add_column("Extra Info", style="cyan")
+            # Atualiza os dados dos dispositivos atuais (sem perder portas já escaneadas)
+            for dev in current_devices:
+                ip = dev['ip']
+                if ip not in device_info:
+                    device_info[ip] = {'device': dev, 'ports': None}
 
-                for device in devices:
-                    try:
-                        mac_lookup = MacLookup()
-                        vendor = mac_lookup.lookup(device['mac'])
-                    except VendorNotFoundError:
-                        vendor = "Desconhecido"
+            # Faz scan de portas apenas para novos dispositivos
+            if new_ips:
+                # Faz em paralelo para acelerar caso muitos novos
+                with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+                    results = list(executor.map(scan_ports_for_device,
+                                               [device_info[ip]['device'] for ip in new_ips]))
+                for idx, ip in enumerate(new_ips):
+                    device_info[ip]['ports'] = results[idx]
 
-                    port_scan = scan_ports_for_device(device)
-                    open_ports = []
-                    version = []
-                    cpe = []
-                    extrainfo = []
-                    mobile = False
+            # Monta painel de detalhes
+            panels = []
+            for ip in sorted(current_ips, key=lambda x: tuple(int(o) for o in x.split('.'))):
+                dev = device_info[ip]['device']
+                ports = device_info[ip]['ports']
 
-                    if port_scan and not port_scan.get('error'):
-                        for proto in port_scan.all_protocols():
-                            for port in port_scan[proto].keys():
-                                if port_scan[proto][port]['state'] == 'open':
-                                    open_ports.append(str(port))
-                                    ver = port_scan[proto][port]['version']
-                                    c = port_scan[proto][port]['cpe']
-                                    ei = port_scan[proto][port]['extrainfo']
-                                    version.append(ver if ver else "-")
-                                    cpe.append(c if c else "-")
-                                    extrainfo.append(ei if ei else "-")
-                    else:
-                        if port_scan and 'error' in port_scan:
-                            open_ports.append(f"Erro: {port_scan.get('error')}")
+                # Descoberta de fabricante e tipo de dispositivo
+                try:
+                    mac_lookup = MacLookup()
+                    vendor = mac_lookup.lookup(dev['mac'])
+                except VendorNotFoundError:
+                    vendor = "Desconhecido"
 
-                    sanitized_vendor = sanitize_vendor_name(vendor)
-                    if any(mob_vendor in sanitized_vendor for mob_vendor in MOBILE_DEVICE_MANUFACTURERS):
-                        mobile = True
-                    elif guess_mobile_from_mac(device['mac']):
-                        mobile = True
+                sanitized_vendor = sanitize_vendor_name(vendor)
+                likely_mobile = any(mob_vendor in sanitized_vendor for mob_vendor in MOBILE_DEVICE_MANUFACTURERS)
 
-                    versao_str = ", ".join(sorted(set(version))) if version else "-"
-                    cpe_str = ", ".join(sorted(set(cpe))) if cpe else "-"
-                    extrainfo_str = ", ".join(sorted(set(extrainfo))) if extrainfo else "-"
-
-                    table_summary.add_row(
-                        device['ip'],
-                        device['mac'],
-                        vendor,
-                        "[bold green]Sim[/bold green]" if mobile else "[bold red]Não[/bold red]",
-                        ", ".join(open_ports) if open_ports else "-",
-                        versao_str,
-                        cpe_str,
-                        extrainfo_str
-                    )
-
-                live.update(
-                    Group(
-                        Text(" [*] Resumo detalhado (atualização):", style="bold yellow"),
-                        table_summary
-                    )
+                panel = Table.grid(padding=(0,1))
+                panel.add_row(f"[bold blue]IP:[/bold blue] [cyan]{dev['ip']}[/cyan]")
+                panel.add_row(f"[bold blue]MAC:[/bold blue] [green]{dev['mac']}[/green]")
+                panel.add_row(f"[bold blue]Fabricante:[/bold blue] [yellow]{vendor}[/yellow]")
+                panel.add_row(
+                    "[bold blue]Dispositivo móvel:[/bold blue] " +
+                    ("[bold green]Sim[/bold green]" if likely_mobile else "[bold red]Não[/bold red]")
                 )
-            else:
-                live.update("[bold red] [*] Nenhum dispositivo encontrado![/bold red]\n")
+                panel.add_row("[bold blue]Portas abertas:[/bold blue]")
 
-            time.sleep(10)
+                table = Table(show_header=True, header_style="bold", box=box.SIMPLE)
+                table.add_column("Porta",      style="cyan")
+                table.add_column("Protocolo",  style="cyan")
+                table.add_column("Estado",     style="cyan")
+                table.add_column("Serviço",    style="cyan")
+                table.add_column("Produto",    style="cyan")
+                table.add_column("Versão",     style="cyan")
+                table.add_column("CPE",        style="cyan")
+                table.add_column("Extra Info", style="cyan")
 
-    except KeyboardInterrupt:
-        # Captura Ctrl+C dentro do loop para encerrar live sem erro
-        pass
-    finally:
-        live.stop()
-        live = None
+                any_open = False
+
+                # Mostra erro, se presente
+                if isinstance(ports, dict) and "error" in ports:
+                    table.add_row("[red]-[/red]", "[red]-[/red]", "[red]-[/red]", "[red]-[/red]", "[red]-[/red]", "[red]-[/red]", "[red]-[/red]", f"[red]{ports['error']}[/red]")
+                elif isinstance(ports, dict):
+                    # TCP
+                    for port, info in ports.get('tcp', {}).items():
+                        if info["state"] != "open":
+                            continue
+                        color = get_important_port_color(port, info["state"])
+                        row = [
+                            str(port),
+                            "tcp",
+                            info.get("state", ""),
+                            info.get("name", ""),
+                            info.get("product", ""),
+                            info.get("version", ""),
+                            info.get("cpe", ""),
+                            info.get("extrainfo", ""),
+                        ]
+                        if color:
+                            row = [f"[{color}]{cell}[/{color}]" if cell else "-" for cell in row]
+                        table.add_row(*row)
+                        any_open = True
+                    # UDP (opcional, se scan UDP for adicionado)
+                    for port, info in ports.get('udp', {}).items():
+                        if info["state"] != "open":
+                            continue
+                        color = get_important_port_color(port, info["state"])
+                        row = [
+                            str(port),
+                            "udp",
+                            info.get("state", ""),
+                            info.get("name", ""),
+                            info.get("product", ""),
+                            info.get("version", ""),
+                            info.get("cpe", ""),
+                            info.get("extrainfo", ""),
+                        ]
+                        if color:
+                            row = [f"[{color}]{cell}[/{color}]" if cell else "-" for cell in row]
+                        table.add_row(*row)
+                        any_open = True
+                    if not any_open:
+                        table.add_row("-", "-", "-", "-", "-", "-", "-", "[red]Nenhuma porta aberta[/red]")
+                else:
+                    table.add_row("-", "-", "-", "-", "-", "-", "-", "[yellow]Aguardando scan de portas...[/yellow]")
+
+                panel.add_row(table)
+                panels.append(panel)
+
+
+            # Se algum IP saiu da rede, pode remover da visualização ou manter conforme desejar
+            prev_ips = current_ips
+            group = Group(*panels) if panels else Text("[bold red]Nenhum dispositivo encontrado![/bold red]")
+            live.update(group)
+            time.sleep(refresh)
 
 def example_usage():
     return "sudo draculns -i eth0 -ip 192.168.0.0/24 -l"
@@ -378,8 +444,10 @@ def main():
     if args.loop:
         # Primeiro scan e print tradicional
         scan_and_print_once(networks)
+        print("")
+        print(" [*]-----------------------------Monitoramento Contínuo-----------------------------[*]\n")
         # Depois loop de atualização do resumo
-        scan_periodically(args, networks)
+        scan_periodically(networks, refresh=10)
     else:
         scan_and_print_once(networks)
 
